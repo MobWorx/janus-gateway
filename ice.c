@@ -5045,6 +5045,16 @@ void janus_ice_send_remb(janus_ice_handle *handle, uint32_t bitrate) {
 	janus_ice_relay_rtcp(handle, &rtcp);
 }
 
+void janus_ice_send_ess(janus_ice_handle *handle, json_t *message) {
+    janus_session *session = (janus_session *)handle->session;
+    if(session == NULL)
+        return;
+    json_object_set_new(message, "janus", json_string("enable_sub_stream"));
+    json_object_set_new(message, "session_id", json_integer(session->session_id));
+    json_object_set_new(message, "sender", json_integer(handle->handle_id));
+    janus_session_notify_event(session, message);
+}
+
 #ifdef HAVE_SCTP
 void janus_ice_relay_data(janus_ice_handle *handle, janus_plugin_data *packet) {
 	if(!handle || handle->queued_packets == NULL || packet == NULL || packet->buffer == NULL || packet->length < 1)

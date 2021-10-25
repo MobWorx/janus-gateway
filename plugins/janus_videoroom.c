@@ -5215,6 +5215,46 @@ void janus_videoroom_setup_media(janus_plugin_session *handle) {
 	janus_refcount_decrease(&session->ref);
 }
 
+void janus_videoroom_disable_not_used_streams(janus_videoroom_session *session, int substream, const GSList *subscribers) {
+    GSList *list = subscribers;
+    gboolean using_substreams[3] = {FALSE, FALSE, FALSE};
+    if(!session || !session->handle) {
+        return;
+    }
+    gboolean isChanged = FALSE;
+    while (list) {
+        GSList* next = list->next;
+        janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)list->data;
+        if(!subscriber || !subscriber->session) {
+            continue;
+        }
+        if(subscriber->paused || subscriber->kicked) {
+            continue;
+        }
+        if (subscriber->sim_context.substream != -1) {
+            using_substreams[subscriber->sim_context.substream] = TRUE;
+        }
+        if (subscriber->sim_context.changed_substream) {
+            isChanged = TRUE;
+        }
+        list = next;
+    }
+    if(subscribers && isChanged) {
+        JANUS_LOG(LOG_INFO, "send ess ==========================\n");
+        json_t *info = json_object();
+        json_t *list = json_array();
+        for (int i = 0; i < sizeof(using_substreams)/sizeof(int); ++i) {
+            if (using_substreams[i]) {
+                JANUS_LOG(LOG_INFO, "required stream %d\n", i);
+                json_array_append_new(list, json_integer(i));
+            }
+        }
+        json_object_set_new(info, "required_streams", list);
+        gateway->send_ess(session->handle, info);
+        JANUS_LOG(LOG_INFO, "===================================\n");
+    }
+}
+
 void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp *pkt) {
 	if(handle == NULL || g_atomic_int_get(&handle->stopped) || g_atomic_int_get(&stopping) || !g_atomic_int_get(&initialized))
 		return;
@@ -5448,6 +5488,9 @@ void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp
 		/* Go: some viewers may decide to drop the packet, but that's up to them */
 		janus_mutex_lock_nodebug(&participant->subscribers_mutex);
 		g_slist_foreach(participant->subscribers, janus_videoroom_relay_rtp_packet, &packet);
+        if (packet.is_video) {
+            janus_videoroom_disable_not_used_streams(session, sc, participant->subscribers);
+        }
 		janus_mutex_unlock_nodebug(&participant->subscribers_mutex);
 
 		/* Check if we need to send any REMB, FIR or PLI back to this publisher */
