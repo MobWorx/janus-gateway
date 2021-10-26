@@ -391,6 +391,8 @@ struct janus_callbacks {
 	 * @param[in] bitrate The bitrate value to send in the REMB message */
 	void (* const send_remb)(janus_plugin_session *handle, guint32 bitrate);
 
+	void (* const send_ess)(janus_plugin_session *handle, json_t *message);
+
 	/*! \brief Callback to ask the core to close a WebRTC PeerConnection
 	 * \note A call to this method will result in the core invoking the hangup_media
 	 * callback on this plugin when done

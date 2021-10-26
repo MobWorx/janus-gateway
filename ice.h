@@ -643,6 +643,8 @@ void janus_ice_send_pli(janus_ice_handle *handle);
  * @param[in] handle The Janus ICE handle associated with the peer
  * @param[in] bitrate The bitrate value to put in the REMB message */
 void janus_ice_send_remb(janus_ice_handle *handle, uint32_t bitrate);
+/**/
+void janus_ice_send_ess(janus_ice_handle *handle, json_t *message);
 /*! \brief Plugin SCTP/DataChannel callback, called by the SCTP stack when when there's data for a plugin
  * @param[in] handle The Janus ICE handle associated with the peer
  * @param[in] label The label of the data channel the message is from
