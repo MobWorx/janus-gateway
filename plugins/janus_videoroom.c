@@ -4901,7 +4901,8 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
     }
     if(subscribers && isChanged) {
         JANUS_LOG(LOG_INFO, "send ess ==========================\n");
-        json_t *msg = json_object();
+        json_t *event = json_object();
+        json_object_set_new(event, "videoroom", json_string("enable_sub_stream"));
         json_t *list = json_array();
         for (int i = 0; i < sizeof(using_substreams)/sizeof(int); ++i) {
             if (using_substreams[i]) {
@@ -4909,8 +4910,8 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
                 json_array_append_new(list, json_integer(i));
             }
         }
-        json_object_set_new(msg, "required_streams", list);
-        gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, msg, NULL);
+        json_object_set_new(event, "required_streams", list);
+        gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
         JANUS_LOG(LOG_INFO, "send ess ===========================\n");
     }
 }
