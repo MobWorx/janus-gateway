@@ -4882,16 +4882,19 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         return;
     }
     gboolean isChanged = FALSE;
+    JANUS_LOG(LOG_INFO, "filter streams ==========================\n");
     while (list) {
         GSList* next = list->next;
         janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)list->data;
         if(!subscriber || !subscriber->session) {
             continue;
         }
-        if(subscriber->paused || subscriber->kicked) {
+        if(!subscriber->video || subscriber->paused || subscriber->kicked) {
             continue;
         }
+        JANUS_LOG(LOG_INFO, "substream %d, substream_target = %d, templayer_target = %d\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target, subscriber->sim_context.templayer_target);
         if (subscriber->sim_context.substream != -1) {
+            JANUS_LOG(LOG_INFO, "using_substream[%d] = TRUE\n", subscriber->sim_context.substream);
             using_substreams[subscriber->sim_context.substream] = TRUE;
         }
         if (subscriber->sim_context.changed_substream) {
@@ -4899,6 +4902,7 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         }
         list = next;
     }
+    JANUS_LOG(LOG_INFO, "filter streams ==========================\n");
     if(subscribers && isChanged) {
         JANUS_LOG(LOG_INFO, "send ess ==========================\n");
         json_t *event = json_object();
