@@ -996,6 +996,7 @@ gboolean janus_rtp_simulcasting_context_process_rtp(janus_rtp_simulcasting_conte
 			return FALSE;
 		}
 	}
+    JANUS_LOG(LOG_INFO, "Simulcasting: receive packet of substream %d\n", substream);
 	/* Reset the flags */
 	context->changed_substream = FALSE;
 	context->changed_temporal = FALSE;
