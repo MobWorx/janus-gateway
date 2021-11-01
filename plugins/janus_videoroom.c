@@ -4897,6 +4897,7 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
             using_substreams[subscriber->sim_context.substream] = TRUE;
         }
         if (subscriber->sim_context.substream != target) {
+            JANUS_LOG(LOG_INFO, "new stream request === %d -> %d\n", subscriber->sim_context.substream, target);
             using_substreams[target] = TRUE;
             isChanged = TRUE;
         }
