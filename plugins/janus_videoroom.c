@@ -4891,18 +4891,20 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         if(!subscriber->video || subscriber->paused || subscriber->kicked) {
             continue;
         }
-        int target = (subscriber->sim_context.substream_target_temp == -1) ? subscriber->sim_context.substream_target
-                : subscriber->sim_context.substream_target_temp;
+        JANUS_LOG(LOG_INFO, "=== ss = %d | sst = %d | sstt = %d ===\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target, subscriber->sim_context.substream_target_temp);
         if (subscriber->sim_context.substream != -1) {
             using_substreams[subscriber->sim_context.substream] = TRUE;
-        }
-        if (subscriber->sim_context.substream != -1 && subscriber->sim_context.substream != target) {
-            JANUS_LOG(LOG_INFO, "enable new stream request === %d -> %d\n", subscriber->sim_context.substream, target);
-            using_substreams[target] = TRUE;
-            isChanged = TRUE;
-        }
-        if (subscriber->sim_context.changed_substream) {
-            isChanged = TRUE;
+            int target = (subscriber->sim_context.substream_target_temp == -1)
+                    ? subscriber->sim_context.substream_target
+                    : subscriber->sim_context.substream_target_temp;
+            if (subscriber->sim_context.substream != target) {
+                JANUS_LOG(LOG_INFO, "enable new stream request === %d -> %d\n", subscriber->sim_context.substream, target);
+                using_substreams[target] = TRUE;
+                isChanged = TRUE;
+            }
+            if (subscriber->sim_context.changed_substream) {
+                isChanged = TRUE;
+            }
         }
         list = next;
     }
