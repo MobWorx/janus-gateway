@@ -4876,8 +4876,8 @@ void janus_videoroom_setup_media(janus_plugin_session *handle) {
 	janus_refcount_decrease(&session->ref);
 }
 
-void janus_videoroom_enable_streams(janus_videoroom_session *session, int substream, const GSList *subscribers) {
-    GSList *list = subscribers;
+void janus_videoroom_enable_streams(janus_videoroom_session *session, int substream, const janus_videoroom_publisher* publisher) {
+    GSList *subscribers = publisher->subscribers;
     gboolean using_substreams[3] = {FALSE, FALSE, FALSE};
     gint64 now = janus_get_monotonic_time();
     if(session->last_substream_request == 0) {
@@ -4888,9 +4888,9 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
     }
     gboolean isChanged = FALSE;
     JANUS_LOG(LOG_INFO, "send ess ========================== start\n");
-    while (list) {
-        GSList* next = list->next;
-        janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)list->data;
+    while (subscribers) {
+        GSList* next = subscribers->next;
+        janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)subscribers->data;
         if(!subscriber || !subscriber->session) {
             continue;
         }
@@ -4909,16 +4909,16 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
                 isChanged = TRUE;
             }
         }
-        list = next;
+        subscribers = next;
     }
-    if(subscribers && isChanged) {
+    if(isChanged) {
         json_t *event = json_object();
         json_object_set_new(event, "videoroom", json_string("enable_sub_stream"));
         json_t *list = json_array();
         for (int i = 0; i < sizeof(using_substreams)/sizeof(int); ++i) {
             if (using_substreams[i]) {
-                JANUS_LOG(LOG_INFO, "required stream %d\n", i);
-                json_array_append_new(list, json_integer(i));
+                JANUS_LOG(LOG_INFO, "required stream [%u] %d\n", publisher->ssrc[i], i);
+                json_array_append_new(list, json_integer(publisher->ssrc[i]));
             }
         }
         json_object_set_new(event, "required_streams", list);
