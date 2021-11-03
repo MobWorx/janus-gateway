@@ -4883,7 +4883,7 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
     if(session->last_substream_request == 0) {
         session->last_substream_request = now;
     }
-    if(!session || !session->handle || (now - session->last_substream_request) < 250000) {
+    if(!session || !session->handle || (now - session->last_substream_request) < 500000) {
         return;
     }
     gboolean isChanged = FALSE;
@@ -4896,6 +4896,7 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         if(!subscriber->video || subscriber->paused || subscriber->kicked) {
             continue;
         }
+        JANUS_LOG(LOG_INFO, "send ess ========================== start\n");
         JANUS_LOG(LOG_INFO, "=== ss = %d | sst = %d | sstt = %d ===\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target, subscriber->sim_context.substream_target_temp);
         if (subscriber->sim_context.substream != -1) {
             using_substreams[subscriber->sim_context.substream] = TRUE;
@@ -4914,7 +4915,6 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         list = next;
     }
     if(subscribers && isChanged) {
-        JANUS_LOG(LOG_INFO, "send ess ==========================\n");
         json_t *event = json_object();
         json_object_set_new(event, "videoroom", json_string("enable_sub_stream"));
         json_t *list = json_array();
@@ -4927,8 +4927,8 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         json_object_set_new(event, "required_streams", list);
         gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
         session->last_substream_request = now;
-        JANUS_LOG(LOG_INFO, "send ess ===========================\n");
     }
+    JANUS_LOG(LOG_INFO, "send ess =========================== end\n");
 }
 
 void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp *pkt) {
