@@ -1473,6 +1473,7 @@ typedef struct janus_videoroom_session {
 	volatile gint destroyed;
 	janus_mutex mutex;
 	janus_refcount ref;
+    gint64 last_substream_request;
 } janus_videoroom_session;
 static GHashTable *sessions;
 static janus_mutex sessions_mutex = JANUS_MUTEX_INITIALIZER;
@@ -4878,7 +4879,11 @@ void janus_videoroom_setup_media(janus_plugin_session *handle) {
 void janus_videoroom_enable_streams(janus_videoroom_session *session, int substream, const GSList *subscribers) {
     GSList *list = subscribers;
     gboolean using_substreams[3] = {FALSE, FALSE, FALSE};
-    if(!session || !session->handle) {
+    gint64 now = janus_get_monotonic_time();
+    if(session->last_substream_request == 0) {
+        session->last_substream_request = now;
+    }
+    if(!session || !session->handle || now - session->last_substream_request < 250000) {
         return;
     }
     gboolean isChanged = FALSE;
@@ -4921,6 +4926,7 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         }
         json_object_set_new(event, "required_streams", list);
         gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
+        session->last_substream_request = now;
         JANUS_LOG(LOG_INFO, "send ess ===========================\n");
     }
 }
