@@ -4883,7 +4883,7 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
     if(session->last_substream_request == 0) {
         session->last_substream_request = now;
     }
-    if(!session || !session->handle || !subscribers || (now - session->last_substream_request) < 500000) {
+    if(!session || !session->handle || !subscribers) {
         return;
     }
     gboolean isChanged = FALSE;
@@ -4901,9 +4901,12 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         if (subscriber->sim_context.substream != -1) {
             using_substreams[subscriber->sim_context.substream] = TRUE;
             if (subscriber->sim_context.substream != subscriber->sim_context.substream_target) {
-                JANUS_LOG(LOG_INFO, "enable new stream request === %d -> %d\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target);
-                using_substreams[subscriber->sim_context.substream_target] = TRUE;
-                isChanged = TRUE;
+                if((now - session->last_substream_request) >= 500000) {
+                    JANUS_LOG(LOG_INFO, "enable new stream request === %d -> %d\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target);
+                    session->last_substream_request = now;
+                    using_substreams[subscriber->sim_context.substream_target] = TRUE;
+                    isChanged = TRUE;
+                }
             }
             if (subscriber->sim_context.changed_substream) {
                 isChanged = TRUE;
@@ -4923,7 +4926,6 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         }
         json_object_set_new(event, "required_streams", list);
         gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
-        session->last_substream_request = now;
     }
     JANUS_LOG(LOG_INFO, "send ess =========================== end\n");
 }
