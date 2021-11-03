@@ -4883,7 +4883,7 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
     if(session->last_substream_request == 0) {
         session->last_substream_request = now;
     }
-    if(!session || !session->handle || now - session->last_substream_request < 250000) {
+    if(!session || !session->handle || (now - session->last_substream_request) < 250000) {
         return;
     }
     gboolean isChanged = FALSE;
