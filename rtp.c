@@ -1019,6 +1019,7 @@ gboolean janus_rtp_simulcasting_context_process_rtp(janus_rtp_simulcasting_conte
 	if(context->substream == -1) {
 		if((vcodec == JANUS_VIDEOCODEC_VP8 && janus_vp8_is_keyframe(payload, plen)) ||
 				(vcodec == JANUS_VIDEOCODEC_H264 && janus_h264_is_keyframe(payload, plen))) {
+            JANUS_LOG(LOG_INFO, "First received keyframe changing %d -> %d\n", context->substream, substream);
 			context->substream = substream;
 			/* Notify the caller that the substream changed */
 			context->changed_substream = TRUE;
@@ -1033,6 +1034,7 @@ gboolean janus_rtp_simulcasting_context_process_rtp(janus_rtp_simulcasting_conte
 				(context->substream > target && substream < context->substream)) &&
 					((vcodec == JANUS_VIDEOCODEC_VP8 && janus_vp8_is_keyframe(payload, plen)) ||
 					(vcodec == JANUS_VIDEOCODEC_H264 && janus_h264_is_keyframe(payload, plen)))) {
+            JANUS_LOG(LOG_INFO, "Received keyframe changing %d -> %d\n", context->substream, substream);
 			JANUS_LOG(LOG_VERB, "Received keyframe on #%d (SSRC %"SCNu32"), switching (was #%d/%"SCNu32")\n",
 				substream, ssrc, context->substream, *(ssrcs + context->substream));
 			context->substream = substream;
