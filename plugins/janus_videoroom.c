@@ -5163,7 +5163,7 @@ void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp
         janus_mutex_lock_nodebug(&participant->subscribers_mutex);
 		g_slist_foreach(participant->subscribers, janus_videoroom_relay_rtp_packet, &packet);
         if (packet.is_video) {
-            janus_videoroom_enable_streams(session, sc, participant->subscribers);
+            janus_videoroom_enable_streams(session, sc, participant);
         }
 		janus_mutex_unlock_nodebug(&participant->subscribers_mutex);
 
