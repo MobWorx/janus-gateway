@@ -4883,10 +4883,11 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
     if(session->last_substream_request == 0) {
         session->last_substream_request = now;
     }
-    if(!session || !session->handle || (now - session->last_substream_request) < 500000) {
+    if(!session || !session->handle || !subscribers || (now - session->last_substream_request) < 500000) {
         return;
     }
     gboolean isChanged = FALSE;
+    JANUS_LOG(LOG_INFO, "send ess ========================== start\n");
     while (list) {
         GSList* next = list->next;
         janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)list->data;
@@ -4896,16 +4897,12 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         if(!subscriber->video || subscriber->paused || subscriber->kicked) {
             continue;
         }
-        JANUS_LOG(LOG_INFO, "send ess ========================== start\n");
         JANUS_LOG(LOG_INFO, "=== ss = %d | sst = %d | sstt = %d ===\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target, subscriber->sim_context.substream_target_temp);
         if (subscriber->sim_context.substream != -1) {
             using_substreams[subscriber->sim_context.substream] = TRUE;
-            int target = (subscriber->sim_context.substream_target_temp == -1)
-                    ? subscriber->sim_context.substream_target
-                    : subscriber->sim_context.substream_target_temp;
-            if (subscriber->sim_context.substream != target) {
-                JANUS_LOG(LOG_INFO, "enable new stream request === %d -> %d\n", subscriber->sim_context.substream, target);
-                using_substreams[target] = TRUE;
+            if (subscriber->sim_context.substream != subscriber->sim_context.substream_target) {
+                JANUS_LOG(LOG_INFO, "enable new stream request === %d -> %d\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target);
+                using_substreams[subscriber->sim_context.substream_target] = TRUE;
                 isChanged = TRUE;
             }
             if (subscriber->sim_context.changed_substream) {
