@@ -5025,6 +5025,7 @@ void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp
 					}
 				}
 			}
+            JANUS_LOG(LOG_INFO, "send ess rcv [%u] ============== %d\n", ssrc, sc);
 		}
 		/* Forward RTP to the appropriate port for the rtp_forwarders associated with this publisher, if there are any */
 		janus_mutex_lock(&participant->rtp_forwarders_mutex);
