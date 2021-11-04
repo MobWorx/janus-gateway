@@ -4887,7 +4887,6 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         return;
     }
     gboolean isChanged = FALSE;
-    JANUS_LOG(LOG_INFO, "send ess ========================== start\n");
     while (subscribers) {
         GSList* next = subscribers->next;
         janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)subscribers->data;
@@ -4897,13 +4896,13 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         if(!subscriber->video || subscriber->paused || subscriber->kicked) {
             continue;
         }
-        JANUS_LOG(LOG_INFO, "=== ss = %d | sst = %d | sstt = %d ===\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target, subscriber->sim_context.substream_target_temp);
+//        JANUS_LOG(LOG_INFO, "=== ss = %d | sst = %d | sstt = %d ===\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target, subscriber->sim_context.substream_target_temp);
         if (subscriber->sim_context.substream != -1) {
             using_substreams[subscriber->sim_context.substream] = TRUE;
             if (subscriber->sim_context.substream != subscriber->sim_context.substream_target
                 && publisher->ssrc[subscriber->sim_context.substream_target] != 0) {
                 if((now - session->last_substream_request) >= 500000) {
-                    JANUS_LOG(LOG_INFO, "enable new stream request === %d -> %d\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target);
+//                    JANUS_LOG(LOG_INFO, "enable new stream request === %d -> %d\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target);
                     session->last_substream_request = now;
                     using_substreams[subscriber->sim_context.substream_target] = TRUE;
                     isChanged = TRUE;
@@ -4919,17 +4918,18 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         json_t *event = json_object();
         json_object_set_new(event, "videoroom", json_string("enable_sub_stream"));
         json_t *list = json_array();
+        JANUS_LOG(LOG_INFO, "required streams [");
         for (int i = 0; i < sizeof(using_substreams)/sizeof(int); ++i) {
             if (using_substreams[i]) {
-                JANUS_LOG(LOG_INFO, "required stream [%u] %d\n", publisher->ssrc[i], i);
+                JANUS_LOG(LOG_INFO, " (%d)->%u ", publisher->ssrc[i], i);
                 json_array_append_new(list, json_integer(publisher->ssrc[i]));
             }
         }
+        JANUS_LOG(LOG_INFO, "]\n");
         json_object_set_new(event, "required_streams", list);
         gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
         janus_videoroom_reqpli(publisher, "Regular keyframe request");
     }
-    JANUS_LOG(LOG_INFO, "send ess =========================== end\n");
 }
 
 void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp *pkt) {
@@ -5029,7 +5029,6 @@ void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp
 					}
 				}
 			}
-            JANUS_LOG(LOG_INFO, "send ess rcv [%u] ============== %d\n", ssrc, sc);
 		}
 		/* Forward RTP to the appropriate port for the rtp_forwarders associated with this publisher, if there are any */
 		janus_mutex_lock(&participant->rtp_forwarders_mutex);
@@ -6210,7 +6209,6 @@ static void *janus_videoroom_handler(void *data) {
 					janus_rtp_simulcasting_context_reset(&subscriber->sim_context);
 					subscriber->sim_context.rid_ext_id = publisher->rid_extmap_id;
 					subscriber->sim_context.substream_target = sc_substream ? json_integer_value(sc_substream) : 2;
-                    JANUS_LOG(LOG_INFO, "{%s:%d}send ess [%p] === %d\n", __FUNCTION__, __LINE__, sc_substream, subscriber->sim_context.substream_target);
 					subscriber->sim_context.templayer_target = sc_temporal ? json_integer_value(sc_temporal) : 2;
 					subscriber->sim_context.drop_trigger = sc_fallback ? json_integer_value(sc_fallback) : 0;
 					janus_vp8_simulcast_context_reset(&subscriber->vp8_context);
@@ -6678,7 +6676,6 @@ static void *janus_videoroom_handler(void *data) {
 					/* Check if a simulcasting-related request is involved */
 					if(sc_substream && (publisher->ssrc[0] != 0 || publisher->rid[0] != NULL)) {
 						subscriber->sim_context.substream_target = json_integer_value(sc_substream);
-                        JANUS_LOG(LOG_INFO, "{%s:%d}send ess === %d\n", __FUNCTION__, __LINE__, subscriber->sim_context.substream_target);
 						JANUS_LOG(LOG_VERB, "Setting video SSRC to let through (simulcast): %"SCNu32" (index %d, was %d)\n",
 							publisher->ssrc[subscriber->sim_context.substream],
 							subscriber->sim_context.substream_target,
@@ -6987,7 +6984,6 @@ static void *janus_videoroom_handler(void *data) {
 				janus_rtp_simulcasting_context_reset(&subscriber->sim_context);
 				subscriber->sim_context.rid_ext_id = publisher->rid_extmap_id;
 				subscriber->sim_context.substream_target = sc_substream ? json_integer_value(sc_substream) : 2;
-                JANUS_LOG(LOG_INFO, "{%s:%d}send ess === %d\n", __FUNCTION__, __LINE__, subscriber->sim_context.substream_target);
 				subscriber->sim_context.templayer_target = sc_temporal ? json_integer_value(sc_temporal) : 2;
 				subscriber->sim_context.drop_trigger = sc_fallback ? json_integer_value(sc_fallback) : 0;
 				janus_vp8_simulcast_context_reset(&subscriber->vp8_context);
