@@ -4919,7 +4919,7 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         json_object_set_new(event, "videoroom", json_string("enable_sub_stream"));
         json_t *list = json_array();
         for (int i = 0; i < sizeof(using_substreams)/sizeof(int); ++i) {
-            if (using_substreams[i]) {
+            if (using_substreams[i] && publisher->ssrc[i] != 0) {
                 JANUS_LOG(LOG_INFO, "required stream [%u] %d\n", publisher->ssrc[i], i);
                 json_array_append_new(list, json_integer(publisher->ssrc[i]));
             }
