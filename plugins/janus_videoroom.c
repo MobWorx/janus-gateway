@@ -4918,14 +4918,16 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         json_t *event = json_object();
         json_object_set_new(event, "videoroom", json_string("enable_sub_stream"));
         json_t *list = json_array();
-        JANUS_LOG(LOG_INFO, "required streams [");
+        char buf[1024];
+        memset(buf, 0, 1024);
+        int sz = sprintf(buf, "required streams: ");
         for (int i = 0; i < sizeof(using_substreams)/sizeof(int); ++i) {
             if (using_substreams[i]) {
-                JANUS_LOG(LOG_INFO, " (%d)->%u ", publisher->ssrc[i], i);
+                sz += snprintf(buf + sz, 1023 - sz, " (%u)->%d ", publisher->ssrc[i], i);
                 json_array_append_new(list, json_integer(publisher->ssrc[i]));
             }
         }
-        JANUS_LOG(LOG_INFO, "]\n");
+        JANUS_LOG(LOG_INFO, "%s\n", buf);
         json_object_set_new(event, "required_streams", list);
         gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
         janus_videoroom_reqpli(publisher, "Regular keyframe request");
