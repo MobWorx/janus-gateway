@@ -4876,6 +4876,16 @@ void janus_videoroom_setup_media(janus_plugin_session *handle) {
 	janus_refcount_decrease(&session->ref);
 }
 
+uint32_t  janus_videoroom_get_next_target(const janus_videoroom_publisher* publisher, const janus_videoroom_subscriber *subscriber) {
+    int substream = subscriber->sim_context.substream_target;
+    if(subscriber->sim_context.substream < substream) {
+        while(substream > subscriber->sim_context.substream && publisher->ssrc[substream--] == 0);
+    } else if (subscriber->sim_context.substream > substream) {
+        while(substream < subscriber->sim_context.substream && publisher->ssrc[substream++] == 0);
+    }
+    return substream;
+}
+
 void janus_videoroom_enable_streams(janus_videoroom_session *session, int substream, const janus_videoroom_publisher* publisher) {
     GSList *subscribers = publisher->subscribers;
     gboolean using_substreams[3] = {FALSE, FALSE, FALSE};
@@ -4899,12 +4909,12 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
 //        JANUS_LOG(LOG_INFO, "=== ss = %d | sst = %d | sstt = %d ===\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target, subscriber->sim_context.substream_target_temp);
         if (subscriber->sim_context.substream != -1) {
             using_substreams[subscriber->sim_context.substream] = TRUE;
-            if (subscriber->sim_context.substream != subscriber->sim_context.substream_target
-                && publisher->ssrc[subscriber->sim_context.substream_target] != 0) {
+            uint32_t target = janus_videoroom_get_next_target(publisher, subscriber);
+            if (subscriber->sim_context.substream != target) {
                 if((now - session->last_substream_request) >= 500000) {
 //                    JANUS_LOG(LOG_INFO, "enable new stream request === %d -> %d\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target);
                     session->last_substream_request = now;
-                    using_substreams[subscriber->sim_context.substream_target] = TRUE;
+                    using_substreams[target] = TRUE;
                     isChanged = TRUE;
                 }
             }
