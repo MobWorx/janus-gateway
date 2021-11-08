@@ -4881,9 +4881,9 @@ uint32_t  janus_videoroom_get_next_target(const janus_videoroom_publisher* publi
             ? subscriber->sim_context.substream_target
             : subscriber->sim_context.substream_target_temp;
     if(subscriber->sim_context.substream < target) {
-        while(target > subscriber->sim_context.substream && publisher->ssrc[target--] == 0);
+        while(target > subscriber->sim_context.substream && publisher->ssrc[target] == 0) --target;
     } else if (subscriber->sim_context.substream > target) {
-        while(target < subscriber->sim_context.substream && publisher->ssrc[target++] == 0);
+        while(target < subscriber->sim_context.substream && publisher->ssrc[target] == 0) ++target;
     }
     return target;
 }
