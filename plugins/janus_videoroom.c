@@ -4877,13 +4877,15 @@ void janus_videoroom_setup_media(janus_plugin_session *handle) {
 }
 
 uint32_t  janus_videoroom_get_next_target(const janus_videoroom_publisher* publisher, const janus_videoroom_subscriber *subscriber) {
-    int substream = subscriber->sim_context.substream_target;
-    if(subscriber->sim_context.substream < substream) {
-        while(substream > subscriber->sim_context.substream && publisher->ssrc[substream--] == 0);
-    } else if (subscriber->sim_context.substream > substream) {
-        while(substream < subscriber->sim_context.substream && publisher->ssrc[substream++] == 0);
+    int target = (subscriber->sim_context.substream_target_temp == -1)
+            ? subscriber->sim_context.substream_target
+            : subscriber->sim_context.substream_target_temp;
+    if(subscriber->sim_context.substream < target) {
+        while(target > subscriber->sim_context.substream && publisher->ssrc[target--] == 0);
+    } else if (subscriber->sim_context.substream > target) {
+        while(target < subscriber->sim_context.substream && publisher->ssrc[target++] == 0);
     }
-    return substream;
+    return target;
 }
 
 void janus_videoroom_enable_streams(janus_videoroom_session *session, int substream, const janus_videoroom_publisher* publisher) {
@@ -4907,7 +4909,10 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
             continue;
         }
         if (subscriber->sim_context.substream != -1) {
-            JANUS_LOG(LOG_INFO, "=== ss = %d | sst = %d | sstt = %d ===\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target, subscriber->sim_context.substream_target_temp);
+            JANUS_LOG(LOG_INFO, "=== ss = %d(%u) | sst = %d(%u) | sstt = %d ===\n",
+                      subscriber->sim_context.substream, publisher->ssrc[subscriber->sim_context.substream],
+                      subscriber->sim_context.substream_target, subscriber->sim_context.substream_target == -1 ? 0 : publisher->ssrc[subscriber->sim_context.substream_target],
+                      subscriber->sim_context.substream_target_temp);
             using_substreams[subscriber->sim_context.substream] = TRUE;
             uint32_t target = janus_videoroom_get_next_target(publisher, subscriber);
             if (subscriber->sim_context.substream != target) {
