@@ -4907,10 +4907,10 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
             continue;
         }
         if (subscriber->sim_context.substream != -1) {
+            JANUS_LOG(LOG_INFO, "=== ss = %d | sst = %d | sstt = %d ===\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target, subscriber->sim_context.substream_target_temp);
             using_substreams[subscriber->sim_context.substream] = TRUE;
             uint32_t target = janus_videoroom_get_next_target(publisher, subscriber);
             if (subscriber->sim_context.substream != target) {
-                JANUS_LOG(LOG_INFO, "=== ss = %d | sst = %d | sstt = %d ===\n", subscriber->sim_context.substream, subscriber->sim_context.substream_target, subscriber->sim_context.substream_target_temp);
                 if((now - session->last_substream_request) >= 500000) {
                     JANUS_LOG(LOG_INFO, "enable new stream request === %d -> %d\n", subscriber->sim_context.substream, target);
                     session->last_substream_request = now;
