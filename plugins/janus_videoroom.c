@@ -4917,7 +4917,8 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
             uint32_t target = janus_videoroom_get_next_target(publisher, subscriber);
             if (subscriber->sim_context.substream != target) {
                 if((now - session->last_substream_request) >= 500000) {
-                    JANUS_LOG(LOG_INFO, "enable new stream request === %d(%u) -> %d(%u)\n",
+                    JANUS_LOG(LOG_INFO, "[%lld][%lld] enable new stream request === %d(%u) -> %d(%u)\n",
+                              publisher->room_id, publisher->user_id,
                               subscriber->sim_context.substream, publisher->ssrc[subscriber->sim_context.substream],
                               target, publisher->ssrc[target]);
                     session->last_substream_request = now;
@@ -4937,14 +4938,14 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         json_t *list = json_array();
         char buf[1024];
         memset(buf, 0, 1024);
-        int sz = sprintf(buf, "required streams: ");
+        int sz = 0;
         for (int i = 0; i < sizeof(using_substreams)/sizeof(int); ++i) {
             if (using_substreams[i]) {
                 sz += snprintf(buf + sz, 1023 - sz, " (%u)->%d ", publisher->ssrc[i], i);
                 json_array_append_new(list, json_integer(publisher->ssrc[i]));
             }
         }
-        JANUS_LOG(LOG_INFO, "%s\n", buf);
+        JANUS_LOG(LOG_INFO, "[%lld][%lld] required streams: %s\n", publisher->room_id, publisher->user_id, buf);
         json_object_set_new(event, "required_streams", list);
         gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
         janus_videoroom_reqpli(publisher, "Regular keyframe request");
