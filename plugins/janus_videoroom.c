@@ -1474,6 +1474,7 @@ typedef struct janus_videoroom_session {
 	janus_mutex mutex;
 	janus_refcount ref;
     gint64 last_substream_request;
+    int max_substream;
 } janus_videoroom_session;
 static GHashTable *sessions;
 static janus_mutex sessions_mutex = JANUS_MUTEX_INITIALIZER;
@@ -2520,6 +2521,8 @@ void janus_videoroom_create_session(janus_plugin_session *handle, int *error) {
 	handle->plugin_handle = session;
 	janus_mutex_init(&session->mutex);
 	janus_refcount_init(&session->ref, janus_videoroom_session_free);
+    session->last_substream_request = 0;
+    session->max_substream = 2;
 
 	janus_mutex_lock(&sessions_mutex);
 	g_hash_table_insert(sessions, handle, session);
@@ -4876,7 +4879,7 @@ void janus_videoroom_setup_media(janus_plugin_session *handle) {
 	janus_refcount_decrease(&session->ref);
 }
 
-uint32_t  janus_videoroom_get_next_target(const janus_videoroom_publisher* publisher, const janus_videoroom_subscriber *subscriber) {
+static uint32_t  janus_videoroom_get_next_target(const janus_videoroom_publisher* publisher, const janus_videoroom_subscriber *subscriber) {
     int target = (subscriber->sim_context.substream_target_temp == -1)
             ? subscriber->sim_context.substream_target
             : subscriber->sim_context.substream_target_temp;
@@ -4888,7 +4891,7 @@ uint32_t  janus_videoroom_get_next_target(const janus_videoroom_publisher* publi
     return target;
 }
 
-void janus_videoroom_enable_streams(janus_videoroom_session *session, int substream, const janus_videoroom_publisher* publisher) {
+void janus_videoroom_enable_streams(janus_videoroom_session *session, int substream, janus_videoroom_publisher* publisher) {
     GSList *subscribers = publisher->subscribers;
     gboolean using_substreams[3] = {FALSE, FALSE, FALSE};
     gint64 now = janus_get_monotonic_time();
@@ -5567,6 +5570,25 @@ static void janus_videoroom_hangup_subscriber(janus_videoroom_subscriber *s) {
 		janus_refcount_decrease(&room->ref);
 }
 
+static void janus_videoroom_max_substreams_calc(janus_videoroom_session* session, GSList* subscribers) {
+    int length = g_slist_length(subscribers);
+    if(length > 6) {
+        session->max_substream = 2;
+    } else if (length > 3) {
+        session->max_substream = 1;
+    } else {
+        session->max_substream = 0;
+    }
+    GSList* s = subscribers;
+    while(s) {
+        janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)s->data;
+        if(subscriber->sim_context.substream_target > session->max_substream) {
+            subscriber->sim_context.substream_target = session->max_substream;
+        }
+        s = s->next;
+    }
+}
+
 static void janus_videoroom_hangup_media_internal(gpointer session_data) {
 	janus_videoroom_session *session = (janus_videoroom_session *)session_data;
 	g_atomic_int_set(&session->started, 0);
@@ -5622,6 +5644,7 @@ static void janus_videoroom_hangup_media_internal(gpointer session_data) {
 				janus_videoroom_hangup_subscriber(s);
 			}
 		}
+        session->max_substream = 2;
 		participant->e2ee = FALSE;
 		janus_mutex_unlock(&participant->subscribers_mutex);
 		janus_videoroom_leave_or_unpublish(participant, FALSE, FALSE);
@@ -5647,6 +5670,7 @@ static void janus_videoroom_hangup_media_internal(gpointer session_data) {
 				janus_mutex_lock(&publisher->subscribers_mutex);
 				publisher->subscribers = g_slist_remove(publisher->subscribers, subscriber);
 				janus_videoroom_hangup_subscriber(subscriber);
+                janus_videoroom_max_substreams_calc(session, publisher->subscribers);
 				janus_mutex_unlock(&publisher->subscribers_mutex);
 			}
 			subscriber->e2ee = FALSE;
@@ -6228,7 +6252,7 @@ static void *janus_videoroom_handler(void *data) {
 					/* Check if a simulcasting-related request is involved */
 					janus_rtp_simulcasting_context_reset(&subscriber->sim_context);
 					subscriber->sim_context.rid_ext_id = publisher->rid_extmap_id;
-					subscriber->sim_context.substream_target = sc_substream ? json_integer_value(sc_substream) : 2;
+					subscriber->sim_context.substream_target = sc_substream ? json_integer_value(sc_substream) : session->max_substream;
 					subscriber->sim_context.templayer_target = sc_temporal ? json_integer_value(sc_temporal) : 2;
 					subscriber->sim_context.drop_trigger = sc_fallback ? json_integer_value(sc_fallback) : 0;
 					janus_vp8_simulcast_context_reset(&subscriber->vp8_context);
@@ -6242,6 +6266,7 @@ static void *janus_videoroom_handler(void *data) {
 					session->participant = subscriber;
 					janus_mutex_lock(&publisher->subscribers_mutex);
 					publisher->subscribers = g_slist_append(publisher->subscribers, subscriber);
+                    janus_videoroom_max_substreams_calc(session, publisher->subscribers);
 					janus_mutex_unlock(&publisher->subscribers_mutex);
 					if(owner != NULL) {
 						/* Note: we should refcount these subscription-publisher mappings as well */
@@ -7003,7 +7028,7 @@ static void *janus_videoroom_handler(void *data) {
 				/* Check if a simulcasting-related request is involved */
 				janus_rtp_simulcasting_context_reset(&subscriber->sim_context);
 				subscriber->sim_context.rid_ext_id = publisher->rid_extmap_id;
-				subscriber->sim_context.substream_target = sc_substream ? json_integer_value(sc_substream) : 2;
+				subscriber->sim_context.substream_target = sc_substream ? json_integer_value(sc_substream) : session->max_substream;
 				subscriber->sim_context.templayer_target = sc_temporal ? json_integer_value(sc_temporal) : 2;
 				subscriber->sim_context.drop_trigger = sc_fallback ? json_integer_value(sc_fallback) : 0;
 				janus_vp8_simulcast_context_reset(&subscriber->vp8_context);
@@ -7021,6 +7046,7 @@ static void *janus_videoroom_handler(void *data) {
 				}
 				janus_mutex_lock(&publisher->subscribers_mutex);
 				publisher->subscribers = g_slist_append(publisher->subscribers, subscriber);
+                janus_videoroom_max_substreams_calc(session, publisher->subscribers);
 				janus_mutex_unlock(&publisher->subscribers_mutex);
 				subscriber->feed = publisher;
 				/* Send a FIR to the new publisher */
