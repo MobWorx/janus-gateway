@@ -5579,6 +5579,7 @@ static void janus_videoroom_max_substreams_calc(janus_videoroom_session* session
     } else {
         session->max_substream = 2;
     }
+    JANUS_LOG(LOG_INFO, "[samvel] max_substream %d\n", session->max_substream);
     GSList* s = subscribers;
     while(s) {
         janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)s->data;
