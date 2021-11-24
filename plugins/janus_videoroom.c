@@ -4950,8 +4950,8 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         }
         JANUS_LOG(LOG_INFO, "[samvel][%lld][%lld] required streams: %s\n", publisher->room_id, publisher->user_id, buf);
         json_object_set_new(event, "required_streams", list);
-        gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
-        janus_videoroom_reqpli(publisher, "Regular keyframe request");
+//        gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
+//        janus_videoroom_reqpli(publisher, "Regular keyframe request");
     }
 }
 
