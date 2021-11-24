@@ -4903,8 +4903,8 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
     }
     gboolean isChanged = FALSE;
     while (subscribers) {
-        GSList* next = subscribers->next;
         janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)subscribers->data;
+        subscribers = subscribers->next;
         if(!subscriber || !subscriber->session) {
             continue;
         }
@@ -4933,7 +4933,6 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
                 isChanged = TRUE;
             }
         }
-        subscribers = next;
     }
     if(isChanged) {
         json_t *event = json_object();
