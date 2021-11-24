@@ -5673,7 +5673,7 @@ static void janus_videoroom_hangup_media_internal(gpointer session_data) {
 				janus_mutex_lock(&publisher->subscribers_mutex);
 				publisher->subscribers = g_slist_remove(publisher->subscribers, subscriber);
 				janus_videoroom_hangup_subscriber(subscriber);
-                janus_videoroom_max_substreams_calc(session, publisher->subscribers);
+//                janus_videoroom_max_substreams_calc(session, publisher->subscribers);
 				janus_mutex_unlock(&publisher->subscribers_mutex);
 			}
 			subscriber->e2ee = FALSE;
@@ -6269,7 +6269,7 @@ static void *janus_videoroom_handler(void *data) {
 					session->participant = subscriber;
 					janus_mutex_lock(&publisher->subscribers_mutex);
 					publisher->subscribers = g_slist_append(publisher->subscribers, subscriber);
-                    janus_videoroom_max_substreams_calc(session, publisher->subscribers);
+//                    janus_videoroom_max_substreams_calc(session, publisher->subscribers);
 					janus_mutex_unlock(&publisher->subscribers_mutex);
 					if(owner != NULL) {
 						/* Note: we should refcount these subscription-publisher mappings as well */
@@ -7049,7 +7049,7 @@ static void *janus_videoroom_handler(void *data) {
 				}
 				janus_mutex_lock(&publisher->subscribers_mutex);
 				publisher->subscribers = g_slist_append(publisher->subscribers, subscriber);
-                janus_videoroom_max_substreams_calc(session, publisher->subscribers);
+//                janus_videoroom_max_substreams_calc(session, publisher->subscribers);
 				janus_mutex_unlock(&publisher->subscribers_mutex);
 				subscriber->feed = publisher;
 				/* Send a FIR to the new publisher */
