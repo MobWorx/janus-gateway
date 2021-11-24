@@ -4950,7 +4950,7 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         }
         JANUS_LOG(LOG_INFO, "[samvel][%lld][%lld] required streams: %s\n", publisher->room_id, publisher->user_id, buf);
         json_object_set_new(event, "required_streams", list);
-//        gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
+        gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
 //        janus_videoroom_reqpli(publisher, "Regular keyframe request");
     }
 }
@@ -5188,9 +5188,9 @@ void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp
 		/* Go: some viewers may decide to drop the packet, but that's up to them */
         janus_mutex_lock_nodebug(&participant->subscribers_mutex);
 		g_slist_foreach(participant->subscribers, janus_videoroom_relay_rtp_packet, &packet);
-//        if (packet.is_video) {
-//            janus_videoroom_enable_streams(session, sc, participant);
-//        }
+        if (packet.is_video) {
+            janus_videoroom_enable_streams(session, sc, participant);
+        }
 		janus_mutex_unlock_nodebug(&participant->subscribers_mutex);
 
 		/* Check if we need to send any REMB, FIR or PLI back to this publisher */
