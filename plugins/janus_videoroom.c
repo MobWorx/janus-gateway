@@ -6253,7 +6253,8 @@ static void *janus_videoroom_handler(void *data) {
 					/* Check if a simulcasting-related request is involved */
 					janus_rtp_simulcasting_context_reset(&subscriber->sim_context);
 					subscriber->sim_context.rid_ext_id = publisher->rid_extmap_id;
-					subscriber->sim_context.substream_target = sc_substream ? json_integer_value(sc_substream) : publisher->max_substream;
+                    int target = sc_substream ? json_integer_value(sc_substream) : publisher->max_substream;
+					subscriber->sim_context.substream_target = target < publisher->max_substream ? target : publisher->max_substream;
 					subscriber->sim_context.templayer_target = sc_temporal ? json_integer_value(sc_temporal) : 2;
 					subscriber->sim_context.drop_trigger = sc_fallback ? json_integer_value(sc_fallback) : 0;
 					janus_vp8_simulcast_context_reset(&subscriber->vp8_context);
@@ -6722,6 +6723,9 @@ static void *janus_videoroom_handler(void *data) {
 					/* Check if a simulcasting-related request is involved */
 					if(sc_substream && (publisher->ssrc[0] != 0 || publisher->rid[0] != NULL)) {
 						subscriber->sim_context.substream_target = json_integer_value(sc_substream);
+                        if(subscriber->sim_context.substream_target > publisher->max_substream) {
+                            subscriber->sim_context.substream_target = publisher->max_substream;
+                        }
 						JANUS_LOG(LOG_VERB, "Setting video SSRC to let through (simulcast): %"SCNu32" (index %d, was %d)\n",
 							publisher->ssrc[subscriber->sim_context.substream],
 							subscriber->sim_context.substream_target,
@@ -7029,7 +7033,8 @@ static void *janus_videoroom_handler(void *data) {
 				/* Check if a simulcasting-related request is involved */
 				janus_rtp_simulcasting_context_reset(&subscriber->sim_context);
 				subscriber->sim_context.rid_ext_id = publisher->rid_extmap_id;
-				subscriber->sim_context.substream_target = sc_substream ? json_integer_value(sc_substream) : publisher->max_substream;
+                int target = sc_substream ? json_integer_value(sc_substream) : publisher->max_substream;
+				subscriber->sim_context.substream_target = target < publisher->max_substream ? target : publisher->max_substream;
 				subscriber->sim_context.templayer_target = sc_temporal ? json_integer_value(sc_temporal) : 2;
 				subscriber->sim_context.drop_trigger = sc_fallback ? json_integer_value(sc_fallback) : 0;
 				janus_vp8_simulcast_context_reset(&subscriber->vp8_context);
