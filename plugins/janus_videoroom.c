@@ -4905,25 +4905,21 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
     while (subscribers) {
         janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)subscribers->data;
         subscribers = subscribers->next;
-        if(!subscriber || !subscriber->session) {
-            continue;
-        }
-        if(!subscriber->video || subscriber->paused || subscriber->kicked) {
+        if(!subscriber || !subscriber->session || !subscriber->video || subscriber->paused || subscriber->kicked) {
             continue;
         }
         if (subscriber->sim_context.substream != -1) {
-//            JANUS_LOG(LOG_INFO, "=== ss = %d(%u) | sst = %d(%u) | sstt = %d ===\n",
-//                      subscriber->sim_context.substream, publisher->ssrc[subscriber->sim_context.substream],
-//                      subscriber->sim_context.substream_target, subscriber->sim_context.substream_target == -1 ? 0 : publisher->ssrc[subscriber->sim_context.substream_target],
-//                      subscriber->sim_context.substream_target_temp);
             using_substreams[subscriber->sim_context.substream] = TRUE;
             uint32_t target = janus_videoroom_get_next_target(publisher, subscriber);
             if (subscriber->sim_context.substream != target) {
                 if((now - session->last_substream_request) >= 500000) {
-                    JANUS_LOG(LOG_INFO, "[samvel][%lld][%lld] enable new stream request === %d(%u) -> %d(%u)\n",
-                              publisher->room_id, publisher->user_id,
-                              subscriber->sim_context.substream, publisher->ssrc[subscriber->sim_context.substream],
-                              target, publisher->ssrc[target]);
+                    JANUS_LOG(LOG_INFO, "[samvel][%"SCNu64"][%"SCNu64"] enable new stream request === %"SCNd32"(%"SCNu32") -> %"SCNd32"(%"SCNu32")\n",
+                              publisher->room_id,
+                              publisher->user_id,
+                              subscriber->sim_context.substream,
+                              publisher->ssrc[subscriber->sim_context.substream],
+                              target,
+                              publisher->ssrc[target]);
                     session->last_substream_request = now;
                     using_substreams[target] = TRUE;
                     isChanged = TRUE;
@@ -4950,7 +4946,6 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
         JANUS_LOG(LOG_INFO, "[samvel][%lld][%lld] required streams: %s\n", publisher->room_id, publisher->user_id, buf);
         json_object_set_new(event, "required_streams", list);
         gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
-//        janus_videoroom_reqpli(publisher, "Regular keyframe request");
     }
 }
 
@@ -5584,7 +5579,9 @@ static void janus_videoroom_max_substreams_calc(janus_videoroom_session* session
         janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)s->data;
         JANUS_LOG(LOG_INFO, "[samvel] substream_target %d\n", subscriber->sim_context.substream_target);
         if(subscriber->sim_context.substream_target > session->max_substream) {
-            JANUS_LOG(LOG_INFO, "[samvel] change substream %d -> %d\n", subscriber->sim_context.substream_target, session->max_substream);
+            JANUS_LOG(LOG_INFO, "[samvel] change substream %"SCNd32" -> %"SCNd32"\n",
+                      subscriber->sim_context.substream_target,
+                      session->max_substream);
             subscriber->sim_context.substream_target = session->max_substream;
         }
         s = s->next;
@@ -5672,7 +5669,7 @@ static void janus_videoroom_hangup_media_internal(gpointer session_data) {
 				janus_mutex_lock(&publisher->subscribers_mutex);
 				publisher->subscribers = g_slist_remove(publisher->subscribers, subscriber);
 				janus_videoroom_hangup_subscriber(subscriber);
-//                janus_videoroom_max_substreams_calc(session, publisher->subscribers);
+                janus_videoroom_max_substreams_calc(session, publisher->subscribers);
 				janus_mutex_unlock(&publisher->subscribers_mutex);
 			}
 			subscriber->e2ee = FALSE;
@@ -6268,7 +6265,7 @@ static void *janus_videoroom_handler(void *data) {
 					session->participant = subscriber;
 					janus_mutex_lock(&publisher->subscribers_mutex);
 					publisher->subscribers = g_slist_append(publisher->subscribers, subscriber);
-//                    janus_videoroom_max_substreams_calc(session, publisher->subscribers);
+                    janus_videoroom_max_substreams_calc(session, publisher->subscribers);
 					janus_mutex_unlock(&publisher->subscribers_mutex);
 					if(owner != NULL) {
 						/* Note: we should refcount these subscription-publisher mappings as well */
@@ -7048,7 +7045,7 @@ static void *janus_videoroom_handler(void *data) {
 				}
 				janus_mutex_lock(&publisher->subscribers_mutex);
 				publisher->subscribers = g_slist_append(publisher->subscribers, subscriber);
-//                janus_videoroom_max_substreams_calc(session, publisher->subscribers);
+                janus_videoroom_max_substreams_calc(session, publisher->subscribers);
 				janus_mutex_unlock(&publisher->subscribers_mutex);
 				subscriber->feed = publisher;
 				/* Send a FIR to the new publisher */
