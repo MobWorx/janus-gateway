@@ -5566,25 +5566,28 @@ static void janus_videoroom_hangup_subscriber(janus_videoroom_subscriber *s) {
 
 static void janus_videoroom_max_substreams_calc(janus_videoroom_session* session, GSList* subscribers) {
     int length = g_slist_length(subscribers);
+    int prev_max_substream = session->max_substream;
     if(length > 6) {
-        session->max_substream = 0;
+        session->max_substream = 2;
     } else if (length > 3) {
         session->max_substream = 1;
     } else {
-        session->max_substream = 2;
+        session->max_substream = 0;
     }
-    JANUS_LOG(LOG_INFO, "[samvel] max_substream %d\n", session->max_substream);
-    GSList* s = subscribers;
-    while(s) {
-        janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)s->data;
-        JANUS_LOG(LOG_INFO, "[samvel] substream_target %d\n", subscriber->sim_context.substream_target);
-        if(subscriber->sim_context.substream_target > session->max_substream) {
-            JANUS_LOG(LOG_INFO, "[samvel] change substream %"SCNd32" -> %"SCNd32"\n",
-                      subscriber->sim_context.substream_target,
-                      session->max_substream);
-            subscriber->sim_context.substream_target = session->max_substream;
+    JANUS_LOG(LOG_INFO, "[samvel] max_substream %d -> %d\n", prev_max_substream, session->max_substream);
+    if(prev_max_substream != session->max_substream) {
+        GSList* s = subscribers;
+        while(s) {
+            janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)s->data;
+            JANUS_LOG(LOG_INFO, "[samvel] substream_target %d\n", subscriber->sim_context.substream_target);
+            if(subscriber->sim_context.substream_target < session->max_substream) {
+                JANUS_LOG(LOG_INFO, "[samvel] change substream %"SCNd32" -> %"SCNd32"\n",
+                          subscriber->sim_context.substream_target,
+                          session->max_substream);
+                subscriber->sim_context.substream_target = session->max_substream;
+            }
+            s = s->next;
         }
-        s = s->next;
     }
 }
 
