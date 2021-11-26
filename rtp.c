@@ -1052,7 +1052,7 @@ gboolean janus_rtp_simulcasting_context_process_rtp(janus_rtp_simulcasting_conte
 		/* Check if too much time went by with no packet relayed */
 		if((now - context->last_relayed) > (context->drop_trigger ? context->drop_trigger : 250000)) {
 			context->last_relayed = now;
-			if(context->substream != substream && context->substream_target_temp != 0) {
+			if(/* context->substream != substream && */ context->substream_target_temp != 0) {
 				if(context->substream_target > substream) {
 					int prev_target = context->substream_target_temp;
 					if(context->substream_target_temp == -1)
