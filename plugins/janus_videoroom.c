@@ -5074,6 +5074,7 @@ void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp
 				continue;
 			} else if(video && rtp_forward->simulcast) {
 				/* This is video and we're simulcasting, check if we need to forward this frame */
+                JANUS_LOG(LOG_INFO, "[samvel] janus_rtp_simulcasting_context_process_rtp rtp_forward->sim_context\n");
 				if(!janus_rtp_simulcasting_context_process_rtp(&rtp_forward->sim_context,
 						buf, len, participant->ssrc, participant->rid, participant->vcodec, &rtp_forward->context))
 					continue;
@@ -5136,7 +5137,8 @@ void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp
 			janus_recorder_save_frame(video ? participant->vrc : participant->arc, buf, len);
 		} else {
 			/* We're simulcasting, save the best video quality */
-			gboolean save = janus_rtp_simulcasting_context_process_rtp(&participant->rec_simctx,
+            JANUS_LOG(LOG_INFO, "[samvel] janus_rtp_simulcasting_context_process_rtp participant->rec_simctx\n");
+            gboolean save = janus_rtp_simulcasting_context_process_rtp(&participant->rec_simctx,
 				buf, len, participant->ssrc, participant->rid, participant->vcodec, &participant->rec_ctx);
 			if(save) {
 				uint32_t seq_number = ntohs(rtp->seq_number);
@@ -7716,7 +7718,8 @@ static void janus_videoroom_relay_rtp_packet(gpointer data, gpointer user_data) 
 			if(payload == NULL)
 				return;
 			/* Process this packet: don't relay if it's not the SSRC/layer we wanted to handle */
-			gboolean relay = janus_rtp_simulcasting_context_process_rtp(&subscriber->sim_context,
+            JANUS_LOG(LOG_INFO, "[samvel] janus_rtp_simulcasting_context_process_rtp subscriber->sim_context\n");
+            gboolean relay = janus_rtp_simulcasting_context_process_rtp(&subscriber->sim_context,
 				(char *)packet->data, packet->length, packet->ssrc, NULL, subscriber->feed->vcodec, &subscriber->context);
 			if(!relay) {
 				/* Did a lot of time pass before we could relay a packet? */
