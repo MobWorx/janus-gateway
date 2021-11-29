@@ -1016,7 +1016,7 @@ gboolean janus_rtp_simulcasting_context_process_rtp(janus_rtp_simulcasting_conte
 		context->substream_target_temp = -1;
 	}
 	int target = (context->substream_target_temp == -1) ? context->substream_target : context->substream_target_temp;
-    JANUS_LOG(LOG_INFO, "[samvel][rtp] substream = %u target = %u context->substream = %u\n", substream, target, context->substream);
+    JANUS_LOG(LOG_INFO, "[samvel][rtp] context = %p substream = %u target = %u context->substream = %u\n", context, substream, target, context->substream);
 	/* Check what we need to do with the packet */
 	if(context->substream == -1) {
 		if((vcodec == JANUS_VIDEOCODEC_VP8 && janus_vp8_is_keyframe(payload, plen)) ||
