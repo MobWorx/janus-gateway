@@ -4912,7 +4912,7 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
             uint32_t target = janus_videoroom_get_next_target(publisher, subscriber);
             if (subscriber->sim_context.substream != target) {
                 if((now - session->last_substream_request) >= 500000) {
-                    JANUS_LOG(LOG_INFO, "[samvel][%"SCNu64"][%"SCNu64"] enable new stream request === %"SCNd32"(%"SCNu32") -> %"SCNd32"(%"SCNu32")\n",
+//                    JANUS_LOG(LOG_INFO, "[samvel][%"SCNu64"][%"SCNu64"] enable new stream request === %"SCNd32"(%"SCNu32") -> %"SCNd32"(%"SCNu32")\n",
                               publisher->room_id,
                               publisher->user_id,
                               subscriber->sim_context.substream,
@@ -4942,7 +4942,7 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
                 json_array_append_new(list, json_integer(publisher->ssrc[i]));
             }
         }
-        JANUS_LOG(LOG_INFO, "[samvel][%lld][%lld] required streams: %s\n", publisher->room_id, publisher->user_id, buf);
+//        JANUS_LOG(LOG_INFO, "[samvel][%lld][%lld] required streams: %s\n", publisher->room_id, publisher->user_id, buf);
         json_object_set_new(event, "required_streams", list);
         gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
     }
@@ -5074,7 +5074,7 @@ void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp
 				continue;
 			} else if(video && rtp_forward->simulcast) {
 				/* This is video and we're simulcasting, check if we need to forward this frame */
-                JANUS_LOG(LOG_INFO, "[samvel] janus_rtp_simulcasting_context_process_rtp rtp_forward->sim_context\n");
+//                JANUS_LOG(LOG_INFO, "[samvel] janus_rtp_simulcasting_context_process_rtp rtp_forward->sim_context\n");
 				if(!janus_rtp_simulcasting_context_process_rtp(&rtp_forward->sim_context,
 						buf, len, participant->ssrc, participant->rid, participant->vcodec, &rtp_forward->context))
 					continue;
@@ -5137,7 +5137,7 @@ void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp
 			janus_recorder_save_frame(video ? participant->vrc : participant->arc, buf, len);
 		} else {
 			/* We're simulcasting, save the best video quality */
-            JANUS_LOG(LOG_INFO, "[samvel] janus_rtp_simulcasting_context_process_rtp participant->rec_simctx\n");
+//            JANUS_LOG(LOG_INFO, "[samvel] janus_rtp_simulcasting_context_process_rtp participant->rec_simctx\n");
             gboolean save = janus_rtp_simulcasting_context_process_rtp(&participant->rec_simctx,
 				buf, len, participant->ssrc, participant->rid, participant->vcodec, &participant->rec_ctx);
 			if(save) {
@@ -5575,14 +5575,14 @@ static void janus_videoroom_max_substreams_calc(janus_videoroom_publisher *publi
     } else {
         publisher->max_substream = 0;
     }
-    JANUS_LOG(LOG_INFO, "[samvel] max_substream %d -> %d\n", prev_max_substream, publisher->max_substream);
+//    JANUS_LOG(LOG_INFO, "[samvel] max_substream %d -> %d\n", prev_max_substream, publisher->max_substream);
     if(prev_max_substream != publisher->max_substream) {
         GSList* s = publisher->subscribers;
         while(s) {
             janus_videoroom_subscriber *subscriber = (janus_videoroom_subscriber *)s->data;
-            JANUS_LOG(LOG_INFO, "[samvel] substream_target %d\n", subscriber->sim_context.substream_target);
+//            JANUS_LOG(LOG_INFO, "[samvel] substream_target %d\n", subscriber->sim_context.substream_target);
             if(subscriber->sim_context.substream_target < publisher->max_substream) {
-                JANUS_LOG(LOG_INFO, "[samvel] change substream %"SCNd32" -> %"SCNd32"\n",
+//                JANUS_LOG(LOG_INFO, "[samvel] change substream %"SCNd32" -> %"SCNd32"\n",
                           subscriber->sim_context.substream_target,
                           publisher->max_substream);
                 subscriber->sim_context.substream_target = publisher->max_substream;
@@ -7718,7 +7718,7 @@ static void janus_videoroom_relay_rtp_packet(gpointer data, gpointer user_data) 
 			if(payload == NULL)
 				return;
 			/* Process this packet: don't relay if it's not the SSRC/layer we wanted to handle */
-            JANUS_LOG(LOG_INFO, "[samvel] janus_rtp_simulcasting_context_process_rtp subscriber->sim_context\n");
+//            JANUS_LOG(LOG_INFO, "[samvel] janus_rtp_simulcasting_context_process_rtp subscriber->sim_context\n");
             gboolean relay = janus_rtp_simulcasting_context_process_rtp(&subscriber->sim_context,
 				(char *)packet->data, packet->length, packet->ssrc, NULL, subscriber->feed->vcodec, &subscriber->context);
 			if(!relay) {

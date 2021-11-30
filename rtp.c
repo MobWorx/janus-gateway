@@ -1012,11 +1012,11 @@ gboolean janus_rtp_simulcasting_context_process_rtp(janus_rtp_simulcasting_conte
 		/* We either just received media on a substream that is higher than
 		 * the target we dropped to (which means the one we want is now flowing
 		 * again) or we've been requested a lower substream target instead */
-        JANUS_LOG(LOG_INFO, "[samvel][rtp] substream_target_temp changed %d -> -1\n", context->substream_target_temp);
+//        JANUS_LOG(LOG_INFO, "[samvel][rtp] substream_target_temp changed %d -> -1\n", context->substream_target_temp);
 		context->substream_target_temp = -1;
 	}
 	int target = (context->substream_target_temp == -1) ? context->substream_target : context->substream_target_temp;
-    JANUS_LOG(LOG_INFO, "[samvel][rtp] context = %p substream = %u target = %u context->substream = %u\n", context, substream, target, context->substream);
+//    JANUS_LOG(LOG_INFO, "[samvel][rtp] context = %p substream = %u target = %u context->substream = %u\n", context, substream, target, context->substream);
 	/* Check what we need to do with the packet */
 	if(context->substream == -1) {
 		if((vcodec == JANUS_VIDEOCODEC_VP8 && janus_vp8_is_keyframe(payload, plen)) ||
@@ -1068,7 +1068,7 @@ gboolean janus_rtp_simulcasting_context_process_rtp(janus_rtp_simulcasting_conte
 						/* Notify the caller that we (still) need a PLI */
 						context->need_pli = TRUE;
 					}
-                    JANUS_LOG(LOG_INFO, "[samvel][rtp] substream_target_temp changed to %d\n", context->substream_target_temp);
+//                    JANUS_LOG(LOG_INFO, "[samvel][rtp] substream_target_temp changed to %d\n", context->substream_target_temp);
                 }
 			}
 		}
