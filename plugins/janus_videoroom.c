@@ -4913,13 +4913,13 @@ void janus_videoroom_enable_streams(janus_videoroom_session *session, int substr
             if (subscriber->sim_context.substream != target) {
                 if((now - session->last_substream_request) >= 500000) {
 //                    JANUS_LOG(LOG_INFO, "[samvel][%"SCNu64"][%"SCNu64"] enable new stream request === %"SCNd32"(%"SCNu32") -> %"SCNd32"(%"SCNu32")\n",
-                              publisher->room_id,
-                              publisher->user_id,
-                              subscriber->sim_context.substream,
-                              publisher->ssrc[subscriber->sim_context.substream],
-                              target,
-                              publisher->ssrc[target]);
-                    session->last_substream_request = now;
+//                              publiser->ssrc[target]);
+//                              session->last_substream_requesher->room_id,
+//                              publisher->user_id,
+//                              subscriber->sim_context.substream,
+//                              publisher->ssrc[subscriber->sim_context.substream],
+//                              target,
+//                              publisht = now;
                     using_substreams[target] = TRUE;
                     isChanged = TRUE;
                 }
@@ -5583,8 +5583,8 @@ static void janus_videoroom_max_substreams_calc(janus_videoroom_publisher *publi
 //            JANUS_LOG(LOG_INFO, "[samvel] substream_target %d\n", subscriber->sim_context.substream_target);
             if(subscriber->sim_context.substream_target < publisher->max_substream) {
 //                JANUS_LOG(LOG_INFO, "[samvel] change substream %"SCNd32" -> %"SCNd32"\n",
-                          subscriber->sim_context.substream_target,
-                          publisher->max_substream);
+//                          subscriber->sim_context.substream_target,
+//                          publisher->max_substream);
                 subscriber->sim_context.substream_target = publisher->max_substream;
             }
             s = s->next;
