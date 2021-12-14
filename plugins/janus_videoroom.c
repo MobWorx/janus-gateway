@@ -1874,7 +1874,7 @@ static void janus_videoroom_max_substreams_calc() {
         min_substream = 0;
         max_substream = 1;
     }
-    JANUS_LOG(LOG_INFO, "[samvel] Calculate max_substream count=%d %d -> %d\n", count, prev_max_substream, max_substream);
+    JANUS_LOG(LOG_INFO, "[samvel] Calculate max_substream count=%d %d -> [%d - %d]\n", count, prev_max_substream, min_substream, max_substream);
 }
 
 static guint32 janus_videoroom_rtp_forwarder_add_helper(janus_videoroom_publisher *p,
