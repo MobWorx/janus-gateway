@@ -1849,25 +1849,25 @@ static void janus_videoroom_reqpli(janus_videoroom_publisher *publisher, const c
 #define JANUS_VIDEOROOM_ERROR_INVALID_SDP		437
 
 static void janus_videoroom_max_substreams_calc() {
-    int length = 0;
+    int count = 0;
     GHashTableIter iter;
     gpointer value;
     g_hash_table_iter_init (&iter, sessions);
     while (g_hash_table_iter_next (&iter, NULL, &value)) {
         janus_videoroom_session* session = value;
         if(session->participant_type == janus_videoroom_p_type_publisher) {
-            ++length;
+            ++count;
         }
     }
     int prev_max_substream = max_substream;
-    if(length > 6) {
+    if(count > 6) {
         max_substream = 2;
-    } else if (length > 3) {
+    } else if (count > 3) {
         max_substream = 1;
     } else {
         max_substream = 0;
     }
-    JANUS_LOG(LOG_INFO, "[samvel] Calculate max_substream  %d -> %d\n", prev_max_substream, max_substream);
+    JANUS_LOG(LOG_INFO, "[samvel] Calculate max_substream count=%d %d -> %d\n", count, prev_max_substream, max_substream);
 }
 
 static guint32 janus_videoroom_rtp_forwarder_add_helper(janus_videoroom_publisher *p,
