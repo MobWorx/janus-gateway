@@ -1477,6 +1477,7 @@ typedef struct janus_videoroom_session {
 } janus_videoroom_session;
 static GHashTable *sessions;
 static janus_mutex sessions_mutex = JANUS_MUTEX_INITIALIZER;
+static int min_substream = 0;
 static int max_substream = 2;
 
 /* A host whose ports gets streamed RTP packets of the corresponding type */
@@ -1848,6 +1849,9 @@ static void janus_videoroom_reqpli(janus_videoroom_publisher *publisher, const c
 #define JANUS_VIDEOROOM_ERROR_ID_EXISTS			436
 #define JANUS_VIDEOROOM_ERROR_INVALID_SDP		437
 
+#define LOW_PUBLISHERS_COUNT        3
+#define MEDIUM_PUBLISHERS_COUNT     5
+
 static void janus_videoroom_max_substreams_calc() {
     int count = 0;
     GHashTableIter iter;
@@ -1860,12 +1864,15 @@ static void janus_videoroom_max_substreams_calc() {
         }
     }
     int prev_max_substream = max_substream;
-    if(count > 6) {
+    if(count > MEDIUM_PUBLISHERS_COUNT) {
+        min_substream = 2;
         max_substream = 2;
-    } else if (count > 3) {
-        max_substream = 1;
+    } else if (count > LOW_PUBLISHERS_COUNT) {
+        min_substream = 1;
+        max_substream = 2;
     } else {
-        max_substream = 0;
+        min_substream = 0;
+        max_substream = 1;
     }
     JANUS_LOG(LOG_INFO, "[samvel] Calculate max_substream count=%d %d -> %d\n", count, prev_max_substream, max_substream);
 }
@@ -6246,9 +6253,8 @@ static void *janus_videoroom_handler(void *data) {
 					/* Check if a simulcasting-related request is involved */
 					janus_rtp_simulcasting_context_reset(&subscriber->sim_context);
 					subscriber->sim_context.rid_ext_id = publisher->rid_extmap_id;
-                    int target = sc_substream ? json_integer_value(sc_substream) : max_substream;
-                    JANUS_LOG(LOG_INFO, "[samvel] target = %d max_substream = %d\n", target, max_substream);
-					subscriber->sim_context.substream_target = target > max_substream ? target : max_substream;
+                    int target = sc_substream ? json_integer_value(sc_substream) : min_substream;
+                    subscriber->sim_context.substream_target = (target >= min_substream && target <= max_substream) ? target : min_substream;
 					subscriber->sim_context.templayer_target = sc_temporal ? json_integer_value(sc_temporal) : 2;
 					subscriber->sim_context.drop_trigger = sc_fallback ? json_integer_value(sc_fallback) : 0;
 					janus_vp8_simulcast_context_reset(&subscriber->vp8_context);
@@ -6715,10 +6721,8 @@ static void *janus_videoroom_handler(void *data) {
 						subscriber->data = json_is_true(data);
 					/* Check if a simulcasting-related request is involved */
 					if(sc_substream && (publisher->ssrc[0] != 0 || publisher->rid[0] != NULL)) {
-						subscriber->sim_context.substream_target = json_integer_value(sc_substream);
-                        if(subscriber->sim_context.substream_target > max_substream) {
-                            subscriber->sim_context.substream_target = max_substream;
-                        }
+						int target = json_integer_value(sc_substream);
+                        subscriber->sim_context.substream_target = (target >= min_substream && target <= max_substream) ? target : min_substream;
 						JANUS_LOG(LOG_VERB, "Setting video SSRC to let through (simulcast): %"SCNu32" (index %d, was %d)\n",
 							publisher->ssrc[subscriber->sim_context.substream],
 							subscriber->sim_context.substream_target,
@@ -7026,8 +7030,8 @@ static void *janus_videoroom_handler(void *data) {
 				/* Check if a simulcasting-related request is involved */
 				janus_rtp_simulcasting_context_reset(&subscriber->sim_context);
 				subscriber->sim_context.rid_ext_id = publisher->rid_extmap_id;
-                int target = sc_substream ? json_integer_value(sc_substream) : max_substream;
-				subscriber->sim_context.substream_target = target > max_substream ? target : max_substream;
+                int target = sc_substream ? json_integer_value(sc_substream) : min_substream;
+				subscriber->sim_context.substream_target = (target >= min_substream && target <= max_substream) ? target : min_substream;
 				subscriber->sim_context.templayer_target = sc_temporal ? json_integer_value(sc_temporal) : 2;
 				subscriber->sim_context.drop_trigger = sc_fallback ? json_integer_value(sc_fallback) : 0;
 				janus_vp8_simulcast_context_reset(&subscriber->vp8_context);
@@ -7723,6 +7727,10 @@ static void janus_videoroom_relay_rtp_packet(gpointer data, gpointer user_data) 
 				JANUS_LOG(LOG_VERB, "We need a PLI for the simulcast context\n");
 				gateway->send_pli(subscriber->feed->session->handle);
 			}
+            if(subscriber->sim_context.substream < min_substream || subscriber->sim_context.substream > max_substream) {
+                JANUS_LOG(LOG_INFO, "[samvel] Change substream %d -> %d\n", subscriber->sim_context.substream, min_substream);
+                subscriber->sim_context.substream_target = min_substream;
+            }
 			/* Do we need to drop this? */
 			if(!relay)
 				return;
