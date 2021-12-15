@@ -1875,7 +1875,7 @@ static void janus_videoroom_enable_substreams(gpointer key, gpointer value, gpoi
             }
             json_object_set_new(event, "required_streams", list);
             gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
-            char *result = json_dumps(root, JSON_ENCODE_ANY);
+            char *result = json_dumps(event, JSON_ENCODE_ANY);
             JANUS_LOG(LOG_INFO, "[samvel]{%s:%d} event: %s\n", __FUNCTION__, __LINE__, result);
             free(result);
         }
