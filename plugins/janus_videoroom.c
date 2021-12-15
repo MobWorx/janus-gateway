@@ -2601,11 +2601,16 @@ void janus_videoroom_create_session(janus_plugin_session *handle, int *error) {
 }
 
 static janus_videoroom_publisher *janus_videoroom_session_get_publisher(janus_videoroom_session *session) {
+    JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
 	janus_mutex_lock(&session->mutex);
+    JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
 	janus_videoroom_publisher *publisher = (janus_videoroom_publisher *)session->participant;
+    JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
 	if(publisher)
 		janus_refcount_increase(&publisher->ref);
+    JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
 	janus_mutex_unlock(&session->mutex);
+    JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
 	return publisher;
 }
 
