@@ -1863,24 +1863,28 @@ static void janus_videoroom_enable_substreams(gpointer key, gpointer value, gpoi
     }
     JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
     janus_videoroom_publisher *publisher = janus_videoroom_session_get_publisher(session);
-    if(publisher && publisher->subscribers && g_slist_length(publisher->subscribers) > 0) {
+    if(publisher) {
         JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
-        json_t *event = json_object();
-        json_object_set_new(event, "videoroom", json_string("enable_sub_stream"));
-        json_t *list = json_array();
-        char buf[1024];
-        memset(buf, 0, 1024);
-        int sz = 0;
-        for (int i = min_substream; i < max_substream; ++i) {
-            sz += snprintf(buf + sz, 1023 - sz, " (%u)->%d ", publisher->ssrc[i], i);
-            json_array_append_new(list, json_integer(publisher->ssrc[i]));
+        if(publisher->subscribers && g_slist_length(publisher->subscribers) == 0) {
+            JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
+            json_t *event = json_object();
+            json_object_set_new(event, "videoroom", json_string("enable_sub_stream"));
+            json_t *list = json_array();
+            char buf[1024];
+            memset(buf, 0, 1024);
+            int sz = 0;
+            for (int i = min_substream; i < max_substream; ++i) {
+                sz += snprintf(buf + sz, 1023 - sz, " (%u)->%d ", publisher->ssrc[i], i);
+                json_array_append_new(list, json_integer(publisher->ssrc[i]));
+            }
+            json_object_set_new(event, "required_streams", list);
+            gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
+            JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
         }
-        json_object_set_new(event, "required_streams", list);
-        gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
+        JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
+        janus_refcount_decrease(&publisher->ref);
         JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
     }
-    JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
-    janus_refcount_decrease(&publisher->ref);
     JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
 }
 
