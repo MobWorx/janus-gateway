@@ -1863,6 +1863,7 @@ static void janus_videoroom_enable_substreams(gpointer key, gpointer value, gpoi
     }
     JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
     janus_videoroom_publisher *publisher = janus_videoroom_session_get_publisher(session);
+    JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
     if(publisher) {
         JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
         if(publisher->subscribers && g_slist_length(publisher->subscribers) == 0) {
