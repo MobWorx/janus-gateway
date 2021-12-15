@@ -1618,6 +1618,9 @@ typedef struct janus_videoroom_publisher {
 	volatile gint destroyed;
 	janus_refcount ref;
 } janus_videoroom_publisher;
+
+static janus_videoroom_publisher *janus_videoroom_session_get_publisher(janus_videoroom_session *session);
+
 static guint32 janus_videoroom_rtp_forwarder_add_helper(janus_videoroom_publisher *p,
 	const gchar *host, int port, int rtcp_port, int pt, uint32_t ssrc,
 	gboolean simulcast, int srtp_suite, const char *srtp_crypto,
@@ -1852,6 +1855,30 @@ static void janus_videoroom_reqpli(janus_videoroom_publisher *publisher, const c
 #define LOW_PUBLISHERS_COUNT        3
 #define MEDIUM_PUBLISHERS_COUNT     5
 
+static void janus_videoroom_enable_substreams(gpointer key, gpointer value, gpointer user_data) {
+    janus_videoroom_session* session = (janus_videoroom_session*)value;
+    if(!session || !session->handle) {
+        return;
+    }
+    janus_videoroom_publisher *publisher = janus_videoroom_session_get_publisher(session);
+    if(!publisher || !publisher->subscribers || !g_slist_length(publisher->subscribers)) {
+        return;
+    }
+    json_t *event = json_object();
+    json_object_set_new(event, "videoroom", json_string("enable_sub_stream"));
+    json_t *list = json_array();
+    char buf[1024];
+    memset(buf, 0, 1024);
+    int sz = 0;
+    for (int i = min_substream; i < max_substream; ++i) {
+        sz += snprintf(buf + sz, 1023 - sz, " (%u)->%d ", publisher->ssrc[i], i);
+        json_array_append_new(list, json_integer(publisher->ssrc[i]));
+    }
+    json_object_set_new(event, "required_streams", list);
+    gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
+    janus_refcount_decrease(&publisher->ref);
+}
+
 static void janus_videoroom_max_substreams_calc() {
     int count = 0;
     GHashTableIter iter;
@@ -1875,6 +1902,7 @@ static void janus_videoroom_max_substreams_calc() {
         max_substream = 1;
     }
     JANUS_LOG(LOG_INFO, "[samvel] Calculate max_substream count=%d %d -> [%d - %d]\n", count, prev_max_substream, min_substream, max_substream);
+    g_hash_table_foreach (sessions, janus_videoroom_enable_substreams, NULL);
 }
 
 static guint32 janus_videoroom_rtp_forwarder_add_helper(janus_videoroom_publisher *p,
