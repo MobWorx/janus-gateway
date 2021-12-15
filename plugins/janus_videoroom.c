@@ -1890,16 +1890,19 @@ static void janus_videoroom_enable_substreams(gpointer key, gpointer value, gpoi
 }
 
 static void janus_videoroom_max_substreams_calc() {
+    JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
     int count = 0;
     GHashTableIter iter;
     gpointer value;
     g_hash_table_iter_init (&iter, sessions);
     while (g_hash_table_iter_next (&iter, NULL, &value)) {
+        JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
         janus_videoroom_session* session = value;
         if(session->participant_type == janus_videoroom_p_type_publisher) {
             ++count;
         }
     }
+    JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
     int prev_max_substream = max_substream;
     if(count > MEDIUM_PUBLISHERS_COUNT) {
         min_substream = 2;
@@ -1912,9 +1915,8 @@ static void janus_videoroom_max_substreams_calc() {
         max_substream = 1;
     }
     JANUS_LOG(LOG_INFO, "[samvel] Calculate max_substream count=%d %d -> [%d - %d]\n", count, prev_max_substream, min_substream, max_substream);
-    janus_mutex_lock(&sessions_mutex);
     g_hash_table_foreach (sessions, janus_videoroom_enable_substreams, NULL);
-    janus_mutex_unlock(&sessions_mutex);
+    JANUS_LOG(LOG_INFO, "[samvel] %s:%d\n", __FUNCTION__, __LINE__);
 }
 
 static guint32 janus_videoroom_rtp_forwarder_add_helper(janus_videoroom_publisher *p,
