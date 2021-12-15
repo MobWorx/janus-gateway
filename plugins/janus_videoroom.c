@@ -2721,7 +2721,7 @@ void janus_videoroom_destroy_session(janus_plugin_session *handle, int *error) {
 	}
 	janus_refcount_increase(&session->ref);
 	g_hash_table_remove(sessions, handle);
-//    janus_videoroom_max_substreams_calc();
+    janus_videoroom_max_substreams_calc();
 	janus_mutex_unlock(&sessions_mutex);
 	/* Any related WebRTC PeerConnection is not available anymore either */
 	janus_videoroom_hangup_media_internal(session);
@@ -6045,7 +6045,7 @@ static void *janus_videoroom_handler(void *data) {
 				janus_mutex_lock(&session->mutex);
 				session->participant_type = janus_videoroom_p_type_publisher;
 				session->participant = publisher;
-//                janus_videoroom_max_substreams_calc();
+                janus_videoroom_max_substreams_calc();
                 janus_mutex_unlock(&session->mutex);
 				/* Return a list of all available publishers (those with an SDP available, that is) */
 				json_t *list = json_array(), *attendees = NULL;
