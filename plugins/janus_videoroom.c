@@ -1856,8 +1856,8 @@ static void janus_videoroom_reqpli(janus_videoroom_publisher *publisher, const c
 #define JANUS_VIDEOROOM_ERROR_ID_EXISTS			436
 #define JANUS_VIDEOROOM_ERROR_INVALID_SDP		437
 
-#define LOW_PUBLISHERS_COUNT        3
-#define MEDIUM_PUBLISHERS_COUNT     5
+#define LOW_PUBLISHERS_COUNT        2
+#define MEDIUM_PUBLISHERS_COUNT     4
 
 static void janus_videoroom_enable_substreams(gpointer key, gpointer value, gpointer user_data) {
     janus_videoroom_session* session = (janus_videoroom_session*)value;
