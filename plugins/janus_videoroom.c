@@ -1128,6 +1128,7 @@ room-<unique room ID>: {
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <nice/agent.h>
 
 /* Plugin information */
 #define JANUS_VIDEOROOM_VERSION			9
@@ -1152,6 +1153,7 @@ void janus_videoroom_create_session(janus_plugin_session *handle, int *error);
 struct janus_plugin_result *janus_videoroom_handle_message(janus_plugin_session *handle, char *transaction, json_t *message, json_t *jsep);
 json_t *janus_videoroom_handle_admin_message(json_t *message);
 void janus_videoroom_setup_media(janus_plugin_session *handle);
+void janus_videoroom_ice_state_changed(janus_plugin_session *handle, guint state);
 void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp *packet);
 void janus_videoroom_incoming_rtcp(janus_plugin_session *handle, janus_plugin_rtcp *packet);
 void janus_videoroom_incoming_data(janus_plugin_session *handle, janus_plugin_data *packet);
@@ -1179,6 +1181,7 @@ static janus_plugin janus_videoroom_plugin =
 		.handle_message = janus_videoroom_handle_message,
 		.handle_admin_message = janus_videoroom_handle_admin_message,
 		.setup_media = janus_videoroom_setup_media,
+        .ice_state_changed = janus_videoroom_ice_state_changed,
 		.incoming_rtp = janus_videoroom_incoming_rtp,
 		.incoming_rtcp = janus_videoroom_incoming_rtcp,
 		.incoming_data = janus_videoroom_incoming_data,
@@ -1866,18 +1869,20 @@ static void janus_videoroom_enable_substreams(gpointer key, gpointer value, gpoi
             json_t *event = json_object();
             json_object_set_new(event, "videoroom", json_string("enable_sub_stream"));
             json_t *list = json_array();
-            char buf[1024];
-            memset(buf, 0, 1024);
-            int sz = 0;
+            gboolean canSend = FALSE;
             for (int i = min_substream; i < max_substream; ++i) {
-                sz += snprintf(buf + sz, 1023 - sz, " (%u)->%d ", publisher->ssrc[i], i);
-                json_array_append_new(list, json_integer(publisher->ssrc[i]));
+                if(publisher->ssrc[i] != 0) {
+                    canSend = TRUE;
+                    json_array_append_new(list, json_integer(publisher->ssrc[i]));
+                }
             }
-            json_object_set_new(event, "required_streams", list);
-            gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
-            char *result = json_dumps(event, JSON_ENCODE_ANY);
-            JANUS_LOG(LOG_INFO, "[samvel]{%s:%d} event: %s\n", __FUNCTION__, __LINE__, result);
-            free(result);
+            if(canSend) {
+                json_object_set_new(event, "required_streams", list);
+                gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
+                char *result = json_dumps(event, JSON_ENCODE_ANY);
+                JANUS_LOG(LOG_INFO, "[samvel]{%s:%d} event: %s\n", __FUNCTION__, __LINE__, result);
+                free(result);
+            }
         }
         janus_refcount_decrease(&publisher->ref);
     }
@@ -5008,6 +5013,16 @@ static void janus_videoroom_enable_streams(janus_videoroom_session *session, int
     }
 }
 
+void janus_videoroom_ice_state_changed(janus_plugin_session *handle, guint state) {
+    if(handle == NULL || g_atomic_int_get(&handle->stopped) || g_atomic_int_get(&stopping) || !g_atomic_int_get(&initialized))
+        return;
+    if(state == NICE_COMPONENT_STATE_READY) {
+        janus_mutex_lock(&sessions_mutex);
+        janus_videoroom_max_substreams_calc();
+        janus_mutex_unlock(&sessions_mutex);
+    }
+}
+
 void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp *pkt) {
 	if(handle == NULL || g_atomic_int_get(&handle->stopped) || g_atomic_int_get(&stopping) || !g_atomic_int_get(&initialized))
 		return;
@@ -6036,10 +6051,6 @@ static void *janus_videoroom_handler(void *data) {
 				session->participant_type = janus_videoroom_p_type_publisher;
 				session->participant = publisher;
                 janus_mutex_unlock(&session->mutex);
-
-                janus_mutex_lock(&sessions_mutex);
-                janus_videoroom_max_substreams_calc();
-                janus_mutex_unlock(&sessions_mutex);
 
 				/* Return a list of all available publishers (those with an SDP available, that is) */
 				json_t *list = json_array(), *attendees = NULL;
