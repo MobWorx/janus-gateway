@@ -1860,12 +1860,14 @@ static void janus_videoroom_reqpli(janus_videoroom_publisher *publisher, const c
 
 static void janus_videoroom_enable_substreams(gpointer key, gpointer value, gpointer user_data) {
     janus_videoroom_session* session = (janus_videoroom_session*)value;
-    if(!session || !session->handle) {
+    if(!session || !session->handle || session->participant_type != janus_videoroom_p_type_publisher) {
         return;
     }
     janus_videoroom_publisher *publisher = janus_videoroom_session_get_publisher(session);
     if(publisher) {
-        if(!publisher->subscribers || !g_slist_length(publisher->subscribers)) {
+        int length = g_slist_length(publisher->subscribers);
+        JANUS_LOG(LOG_INFO, "[samvel]{%s:%d} %p : len=%d (%d, %d, %d)\n", __FUNCTION__, __LINE__, publisher->subscribers, length, publisher->ssrc[0], publisher->ssrc[1], publisher->ssrc[2]);
+        if(!publisher->subscribers || length == 0) {
             json_t *event = json_object();
             json_object_set_new(event, "videoroom", json_string("enable_sub_stream"));
             json_t *list = json_array();
@@ -1911,7 +1913,9 @@ static void janus_videoroom_max_substreams_calc() {
         max_substream = 1;
     }
     JANUS_LOG(LOG_INFO, "[samvel] Calculate max_substream count=%d %d -> [%d - %d]\n", count, prev_max_substream, min_substream, max_substream);
-    g_hash_table_foreach (sessions, janus_videoroom_enable_substreams, NULL);
+    if(prev_max_substream != max_substream) {
+        g_hash_table_foreach (sessions, janus_videoroom_enable_substreams, NULL);
+    }
 }
 
 static guint32 janus_videoroom_rtp_forwarder_add_helper(janus_videoroom_publisher *p,
