@@ -1620,6 +1620,7 @@ typedef struct janus_videoroom_publisher {
 	gboolean e2ee;		/* If media from this publisher is end-to-end encrypted */
 	volatile gint destroyed;
 	janus_refcount ref;
+    gboolean count_checked;
 } janus_videoroom_publisher;
 
 static janus_videoroom_publisher *janus_videoroom_session_get_publisher(janus_videoroom_session *session);
@@ -5020,11 +5021,11 @@ static void janus_videoroom_enable_streams(janus_videoroom_session *session, int
 void janus_videoroom_ice_state_changed(janus_plugin_session *handle, guint state) {
     if(handle == NULL || g_atomic_int_get(&handle->stopped) || g_atomic_int_get(&stopping) || !g_atomic_int_get(&initialized))
         return;
-    if(state == NICE_COMPONENT_STATE_READY) {
-        janus_mutex_lock(&sessions_mutex);
-        janus_videoroom_max_substreams_calc();
-        janus_mutex_unlock(&sessions_mutex);
-    }
+//    if(state == NICE_COMPONENT_STATE_CONNECTED) {
+//        janus_mutex_lock(&sessions_mutex);
+//        janus_videoroom_max_substreams_calc();
+//        janus_mutex_unlock(&sessions_mutex);
+//    }
 }
 
 void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp *pkt) {
@@ -5319,6 +5320,12 @@ void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp
 					janus_videoroom_reqpli(participant, "Regular keyframe request");
 				}
 			}
+            if(!participant->count_checked) {
+                janus_mutex_lock(&sessions_mutex);
+                janus_videoroom_max_substreams_calc();
+                janus_mutex_unlock(&sessions_mutex);
+                participant->count_checked = TRUE;
+            }
 		}
 	}
 	janus_videoroom_publisher_dereference_nodebug(participant);
@@ -5996,6 +6003,7 @@ static void *janus_videoroom_handler(void *data) {
 				publisher->rtp_forwarders = g_hash_table_new_full(NULL, NULL, NULL, (GDestroyNotify)janus_videoroom_rtp_forwarder_destroy);
 				publisher->srtp_contexts = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, (GDestroyNotify)janus_videoroom_srtp_context_free);
 				publisher->udp_sock = -1;
+                publisher->count_checked = FALSE;
 				/* Finally, generate a private ID: this is only needed in case the participant
 				 * wants to allow the plugin to know which subscriptions belong to them */
 				publisher->pvt_id = 0;
