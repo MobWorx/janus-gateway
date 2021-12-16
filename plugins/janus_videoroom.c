@@ -5320,7 +5320,10 @@ void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp
 					janus_videoroom_reqpli(participant, "Regular keyframe request");
 				}
 			}
-            if(!participant->count_checked) {
+            if(!participant->count_checked
+                && participant->ssrc[0] != 0
+                && participant->ssrc[1] != 0
+                && participant->ssrc[2] != 0) {
                 janus_mutex_lock(&sessions_mutex);
                 janus_videoroom_max_substreams_calc();
                 janus_mutex_unlock(&sessions_mutex);
