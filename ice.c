@@ -1859,14 +1859,6 @@ static void janus_ice_cb_component_state_changed(NiceAgent *agent, guint stream_
 			JANUS_LOG(LOG_VERB, "[%"SCNu64"] Creating ICE state check timer with ID %u\n", handle->handle_id, id);
 		}
 	}
-    /* Pass the packet to the plugin */
-    janus_plugin *plugin = (janus_plugin *)handle->app;
-    if(plugin && plugin->incoming_rtp && handle->app_handle &&
-       !g_atomic_int_get(&handle->app_handle->stopped) &&
-       !g_atomic_int_get(&handle->destroyed)) {
-        plugin->ice_state_changed(handle->app_handle, state);
-    }
-
 }
 
 #ifndef HAVE_LIBNICE_TCP

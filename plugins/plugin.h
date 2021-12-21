@@ -297,9 +297,6 @@ struct janus_plugin {
 	/*! \brief Callback to be notified when the associated PeerConnection is up and ready to be used
 	 * @param[in] handle The plugin/gateway session used for this peer */
 	void (* const setup_media)(janus_plugin_session *handle);
-    /*! \brief Method to handle an incoming RTP packet from a peer
-     * @param[in] handle The plugin/gateway session used for this peer */
-    void (* const ice_state_changed)(janus_plugin_session *handle, guint state);
 	/*! \brief Method to handle an incoming RTP packet from a peer
 	 * @param[in] handle The plugin/gateway session used for this peer
 	 * @param[in] packet The RTP packet and related data */
