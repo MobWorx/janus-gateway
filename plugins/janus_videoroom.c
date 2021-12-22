@@ -4708,21 +4708,20 @@ static json_t *janus_videoroom_process_synchronous_request(janus_videoroom_sessi
 	}
 
 prepare_response:
-		{
-			if(error_code == 0 && !response) {
-				error_code = JANUS_VIDEOROOM_ERROR_UNKNOWN_ERROR;
-				g_snprintf(error_cause, 512, "Invalid response");
-			}
-			if(error_code != 0) {
-				/* Prepare JSON error event */
-				response = json_object();
-				json_object_set_new(response, "videoroom", json_string("event"));
-				json_object_set_new(response, "error_code", json_integer(error_code));
-				json_object_set_new(response, "error", json_string(error_cause));
-			}
-			return response;
-		}
-
+    {
+        if(error_code == 0 && !response) {
+            error_code = JANUS_VIDEOROOM_ERROR_UNKNOWN_ERROR;
+            g_snprintf(error_cause, 512, "Invalid response");
+        }
+        if(error_code != 0) {
+            /* Prepare JSON error event */
+            response = json_object();
+            json_object_set_new(response, "videoroom", json_string("event"));
+            json_object_set_new(response, "error_code", json_integer(error_code));
+            json_object_set_new(response, "error", json_string(error_cause));
+        }
+        return response;
+    }
 }
 
 struct janus_plugin_result *janus_videoroom_handle_message(janus_plugin_session *handle, char *transaction, json_t *message, json_t *jsep) {
@@ -4959,11 +4958,11 @@ static uint32_t  janus_videoroom_get_next_target(const janus_videoroom_publisher
     return target;
 }
 
-static void janus_videoroom_enable_streams(janus_videoroom_session *session, int substream, janus_videoroom_publisher* publisher) {
+static void janus_videoroom_enable_streams(janus_videoroom_session *session, janus_videoroom_publisher* publisher) {
     GSList *subscribers = publisher->subscribers;
     gboolean using_substreams[3] = {FALSE, FALSE, FALSE};
     gint64 now = janus_get_monotonic_time();
-    int fwd_substream = 2;
+    int fwd_substream = -1;
     if(session->last_substream_request == 0) {
         session->last_substream_request = now;
     }
@@ -4991,7 +4990,7 @@ static void janus_videoroom_enable_streams(janus_videoroom_session *session, int
                 isChanged = TRUE;
             }
 
-            if(fwd_substream > subscriber->sim_context.substream) {
+            if(fwd_substream == -1 || fwd_substream > subscriber->sim_context.substream) {
                 fwd_substream = subscriber->sim_context.substream;
             }
         }
@@ -5012,18 +5011,19 @@ static void janus_videoroom_enable_streams(janus_videoroom_session *session, int
         json_object_set_new(event, "required_streams", list);
         gateway->push_event(session->handle, &janus_videoroom_plugin, NULL, event, NULL);
     }
-
-    GHashTableIter iter_f;
-    gpointer key_f, value_f;
-    janus_mutex_lock(&publisher->rtp_forwarders_mutex);
-    g_hash_table_iter_init(&iter_f, publisher->rtp_forwarders);
-    while(g_hash_table_iter_next(&iter_f, NULL, &value_f)) {
-        janus_videoroom_rtp_forwarder *rtp_forward = (janus_videoroom_rtp_forwarder *)value_f;
-        if(!rtp_forward->is_video)
-            continue;
-        rtp_forward->substream = fwd_substream;
+    if(fwd_substream != -1) {
+        GHashTableIter iter_f;
+        gpointer value_f;
+        janus_mutex_lock(&publisher->rtp_forwarders_mutex);
+        g_hash_table_iter_init(&iter_f, publisher->rtp_forwarders);
+        while(g_hash_table_iter_next(&iter_f, NULL, &value_f)) {
+            janus_videoroom_rtp_forwarder *rtp_forward = (janus_videoroom_rtp_forwarder *)value_f;
+            if(!rtp_forward->is_video)
+                continue;
+            rtp_forward->substream = fwd_substream;
+        }
+        janus_mutex_unlock(&publisher->rtp_forwarders_mutex);
     }
-    janus_mutex_unlock(&publisher->rtp_forwarders_mutex);
 }
 
 void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp *pkt) {
@@ -5260,7 +5260,7 @@ void janus_videoroom_incoming_rtp(janus_plugin_session *handle, janus_plugin_rtp
         janus_mutex_lock_nodebug(&participant->subscribers_mutex);
 		g_slist_foreach(participant->subscribers, janus_videoroom_relay_rtp_packet, &packet);
         if (packet.is_video) {
-            janus_videoroom_enable_streams(session, sc, participant);
+            janus_videoroom_enable_streams(session, participant);
         }
 		janus_mutex_unlock_nodebug(&participant->subscribers_mutex);
 
